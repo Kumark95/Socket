@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#define ADDRESS     "mysocket"  /* addr to connect */
+#define BACKLOG 1  /* addr to connect */
 
 // Create a socket and initialize it to be able to accept 
 // connections.
@@ -18,43 +18,38 @@
 
 int createServerSocket (int port)
 {
+
+	/* File descriptor */
+	int fdSock;
+	
 	/* Crea el socket */
-	int sock = socket(PF_UNIX,SOCK_STREAM,0);
-	if (sock < 0) {
-		perror("socket");
+	if ( (fdSock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+		perror("socket errr");
 		exit(EXIT_FAILURE);
 	}
 
+	/* Actualiza la estructura */
+	struct sockaddr_in server;
+	server.sin_family = AF_INET;
+	server.sin_port = 0; //Comprovar
+	server.sin_addr.s_addr = INADDR_ANY;
+	bzero(&(server.sin_zero),8);
 
-//http://troydhanson.github.io/network/Unix_domain_sockets.html
-
-	struct sockaddr_un addrSock;
-	memset(&addrSock, 0, sizeof(addrSock));
-	addrSock.sun_family = AF_UNIX;
-	strcpy(addrSock.sun_path, "socket", sizeof(addrSock.sun_path)-1);
-
-	/* The size of the address is
-	 the offset of the start of the filename,
-	 plus its length (not including the terminating null byte).
-	 Alternatively you can just do:
-	 size = SUN_LEN (&name);
-	*/
-	//size_t size = (offsetof (struct sockaddr_un, sun_path)
-		  //+ strlen (addrSock.sun_path));
-
-	if (bind (sock, (struct sockaddr *) &addrSock, sizeof(addrSock)) < 0)
-	{
-	  perror ("bind");
-	  exit (EXIT_FAILURE);
+	/* Se llama a bind() */
+	if ( (bind(fdSock, (struct sockaddr *)&server, sizeof(struct sockaddr)) < 0)) {
+		perror("bind error");
+		exit(EXIT_FAILURE);
 	}
-
-	if (listen(sock, 5) < 0) {
-	  perror ("listen");
-	  exit (EXIT_FAILURE);
-	}
-
-	return accept(sock, NULL, NULL);
 	
+	/* listen */ 
+	if ( (listen(fdSock, BACKLOG)) < 0 ) {
+	perror("listen error");
+	exit(EXIT_FAILURE);	
+	}
+	
+	int sin_size = sizeof(struct sockaddr_in);
+	
+	return accept(fdSock,NULL,NULL);
 }
 
 
