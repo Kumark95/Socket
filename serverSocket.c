@@ -2,6 +2,15 @@
 #include <string.h>
 #include <stdio.h>
 
+doServiceFork(int fd) {
+	int PID = fork();
+	if (PID < 0) {
+		perror ("Error en fork");
+		exit(1);
+	}
+	if (PID == 0) doService(fd);
+}
+
 
 doService(int fd) {
 	int i = 0;
@@ -65,7 +74,8 @@ main (int argc, char *argv[])
 		  exit (1);
 	  }
 
-	  doService(connectionFD);
+	  doServiceFork(connectionFD);
+	  //doService(connectionFD);
   }
 
 }
